@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento e Testes de Microsserviços</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            900: '#030712',
+                            800: '#0B0F19',
+                            700: '#111827',
+                            600: '#1F2937',
+                            primary: '#06B6D4',
+                            secondary: '#8B5CF6',
+                            accent: '#10B981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #F3F4F6;
+            overflow-x: hidden;
+        }
+        .font-mono-code {
+            font-family: 'Fira Code', monospace;
+        }
+        canvas#bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        .glow-border {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #030712;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06B6D4;
+        }
+        .section-view {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+        .section-view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-cyan-500 selection:text-black">
+
+    <canvas id="bg-canvas"></canvas>
+
+    <header class="fixed top-0 left-0 w-full z-50 glass-panel border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goToSection(1)">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center glow-border shadow-lg">
+                    <i class="fa-solid fa-network-wired text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm md:text-base font-bold tracking-wider text-cyan-400 font-mono-code">DEV_SYSTEMS //</h1>
+                    <p class="text-xs text-gray-400">Monitoramento & Testes</p>
+                </div>
+            </div>
+
+            <nav class="hidden xl:flex items-center space-x-1">
+                <button onclick="goToSection(1)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="1">1. Início</button>
+                <button onclick="goToSection(2)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="2">2. Monitoramento</button>
+                <button onclick="goToSection(3)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="3">3. Pilares</button>
+                <button onclick="goToSection(4)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="4">4. Ferramentas</button>
+                <button onclick="goToSection(5)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="5">5. Tipos Teste</button>
+                <button onclick="goToSection(6)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="6">6. Contratos</button>
+                <button onclick="goToSection(7)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="7">7. Resiliência</button>
+                <button onclick="goToSection(8)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="8">8. Produção</button>
+                <button onclick="goToSection(9)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition hover:text-cyan-400 hover:bg-cyan-950/40" data-target="9">9. Conclusão</button>
+                <button onclick="goToSection(10)" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium transition text-purple-300 hover:text-purple-200 bg-purple-950/40 border border-purple-500/30" data-target="10"><i class="fa-solid fa-gamepad mr-1"></i> 10. Quiz</button>
+            </nav>
+
+            <button onclick="toggleMobileMenu()" class="xl:hidden text-gray-300 hover:text-cyan-400 focus:outline-none p-2 rounded-lg bg-gray-800/50">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden xl:hidden mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 sm:grid-cols-3 gap-2 pb-2">
+            <button onclick="goToSection(1); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">1. Início</button>
+            <button onclick="goToSection(2); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">2. Monitoramento</button>
+            <button onclick="goToSection(3); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">3. Pilares</button>
+            <button onclick="goToSection(4); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">4. Ferramentas</button>
+            <button onclick="goToSection(5); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">5. Tipos Teste</button>
+            <button onclick="goToSection(6); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">6. Contratos</button>
+            <button onclick="goToSection(7); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">7. Resiliência</button>
+            <button onclick="goToSection(8); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">8. Produção</button>
+            <button onclick="goToSection(9); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs hover:bg-cyan-950/40 hover:text-cyan-400">9. Conclusão</button>
+            <button onclick="goToSection(10); toggleMobileMenu()" class="text-left px-3 py-2 rounded text-xs text-purple-300 bg-purple-950/50">10. Quiz Interativo</button>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+
+        <!-- ================= SEÇÃO 1 ================= -->
+        <section id="section-1" class="section-view active">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">ES</div>
+                    <div>
+                        <span class="text-xs text-cyan-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 1 e 2)</span>
+                        <h3 class="text-lg font-bold text-white">Emerson de Sousa</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-cyan-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/30">PÁGINA 01 / 10</span>
+                    <span><i class="fa-solid fa-cubes mr-1"></i> INTRODUÇÃO E EQUIPE</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4 tracking-tight">Monitoramento e Testes de Microsserviços</h2>
+                
+                <p class="text-gray-300 mb-6 text-base leading-relaxed">
+                    Bem-vindo ao portal interativo de desenvolvimento de sistemas focado em arquiteturas distribuídas e microsserviços. Conheça abaixo os integrantes que compõem nossa equipe de pesquisa e desenvolvimento:
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-6">
+                    <div class="bg-gray-900/80 p-4 rounded-xl border border-cyan-500/30 flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">ES</div>
+                        <div>
+                            <h4 class="text-white font-semibold text-sm">Emerson de Sousa</h4>
+                            <span class="text-xs text-cyan-400 font-mono-code">Seções 1 e 2</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/80 p-4 rounded-xl border border-emerald-500/30 flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">WQ</div>
+                        <div>
+                            <h4 class="text-white font-semibold text-sm">Wesley Queiroz</h4>
+                            <span class="text-xs text-emerald-400 font-mono-code">Seções 3 e 4</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/80 p-4 rounded-xl border border-purple-500/30 flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">WS</div>
+                        <div>
+                            <h4 class="text-white font-semibold text-sm">Wesley de Souza</h4>
+                            <span class="text-xs text-purple-400 font-mono-code">Seções 5 e 6</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/80 p-4 rounded-xl border border-blue-500/30 flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">RA</div>
+                        <div>
+                            <h4 class="text-white font-semibold text-sm">Rafael Alves</h4>
+                            <span class="text-xs text-blue-400 font-mono-code">Seções 7 e 8</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/80 p-4 rounded-xl border border-orange-500/30 flex items-center space-x-3 sm:col-span-2 lg:col-span-1">
+                        <div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold">HA</div>
+                        <div>
+                            <h4 class="text-white font-semibold text-sm">Heric Antônio</h4>
+                            <span class="text-xs text-orange-400 font-mono-code">Seções 9 e 10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                    <div class="bg-gray-900/60 p-5 rounded-xl border border-gray-800">
+                        <h3 class="text-base font-semibold text-white mb-2"><i class="fa-solid fa-cube text-cyan-400 mr-2"></i> O que são Microsserviços?</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed">Estilo arquitetural que estrutura aplicações como um conjunto de serviços pequenos e independentes em torno de domínios de negócio.</p>
+                    </div>
+                    <div class="bg-gray-900/60 p-5 rounded-xl border border-gray-800">
+                        <h3 class="text-base font-semibold text-white mb-2"><i class="fa-solid fa-network-wired text-cyan-400 mr-2"></i> Complexidade Distribuída</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed">A comunicação via rede introduz latência, falhas parciais e desafios severos de rastreamento e depuração.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <span class="text-xs text-gray-400 font-mono-code">Desenvolvimento de Sistemas</span>
+                    <button onclick="goToSection(2)" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Emerson (Seção 2)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 2 ================= -->
+        <section id="section-2" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">ES</div>
+                    <div>
+                        <span class="text-xs text-cyan-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 1 e 2)</span>
+                        <h3 class="text-lg font-bold text-white">Emerson de Sousa</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-cyan-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/30">PÁGINA 02 / 10</span>
+                    <span><i class="fa-solid fa-eye mr-1"></i> MONITORAMENTO VS OBSERVABILIDADE</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Conceitos Fundamentais de Monitoramento</h2>
+
+                <p class="text-gray-300 mb-6 leading-relaxed">Nesta seção, exploramos a diferença crítica entre monitoramento tradicional e observabilidade avançada em ambientes de desenvolvimento.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-cyan-500/30">
+                        <h3 class="text-xl font-bold text-white mb-3 flex items-center">
+                            <span class="w-8 h-8 rounded bg-cyan-500/20 text-cyan-400 flex items-center justify-center mr-2 text-sm">M</span> Monitoramento
+                        </h3>
+                        <p class="text-gray-300 text-sm mb-4">Responde à pergunta: <strong class="text-cyan-400">"O sistema está funcionando?"</strong></p>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i>Coleta de métricas preestabelecidas e limites conhecidos.</li>
+                            <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i>Disparo de alertas em limiares de uso de CPU/memória.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-purple-500/30">
+                        <h3 class="text-xl font-bold text-white mb-3 flex items-center">
+                            <span class="w-8 h-8 rounded bg-purple-500/20 text-purple-400 flex items-center justify-center mr-2 text-sm">O</span> Observabilidade
+                        </h3>
+                        <p class="text-gray-300 text-sm mb-4">Responde à pergunta: <strong class="text-purple-400">"Por que o sistema está falhando?"</strong></p>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li><i class="fa-solid fa-check text-purple-400 mr-2"></i>Investigação profunda de comportamentos inéditos (unknown-unknowns).</li>
+                            <li><i class="fa-solid fa-check text-purple-400 mr-2"></i>Correlação entre logs, métricas e traces em tempo real.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(1)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(3)" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Wesley Queiroz (Seção 3)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 3 ================= -->
+        <section id="section-3" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">WQ</div>
+                    <div>
+                        <span class="text-xs text-emerald-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 3 e 4)</span>
+                        <h3 class="text-lg font-bold text-white">Wesley Queiroz</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-emerald-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/30">PÁGINA 03 / 10</span>
+                    <span><i class="fa-solid fa-columns mr-1"></i> OS TRÊS PILARES DA OBSERVABILIDADE</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Logs, Métricas e Traces</h2>
+                
+                <p class="text-gray-300 mb-6">Apresentação dos três pilares fundamentais que sustentam qualquer arquitetura observável de microsserviços:</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
+                    <div class="bg-gray-900/70 p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl mb-4">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-2">1. Logs</h3>
+                            <p class="text-gray-300 text-sm mb-4">Registro cronológico de eventos discretos que acontecem dentro do microsserviço.</p>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded-lg font-mono-code text-xs text-blue-300 border border-gray-800">
+                            [INFO] Payment processed: ID 9081
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/70 p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl mb-4">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-2">2. Métricas</h3>
+                            <p class="text-gray-300 text-sm mb-4">Valores numéricos agregados ao longo do tempo para medir performance global.</p>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded-lg font-mono-code text-xs text-emerald-300 border border-gray-800">
+                            cpu_usage_ratio = 0.78
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/70 p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl mb-4">
+                                <i class="fa-solid fa-route"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-2">3. Traces</h3>
+                            <p class="text-gray-300 text-sm mb-4">Rastreamento de ponta a ponta de requisições cruzando múltiplos serviços.</p>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded-lg font-mono-code text-xs text-purple-300 border border-gray-800">
+                            TraceID: 3a4f (Gateway -> Cart -> Payment)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(2)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(4)" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Wesley Queiroz (Seção 4)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 4 ================= -->
+        <section id="section-4" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">WQ</div>
+                    <div>
+                        <span class="text-xs text-emerald-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 3 e 4)</span>
+                        <h3 class="text-lg font-bold text-white">Wesley Queiroz</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-emerald-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/30">PÁGINA 04 / 10</span>
+                    <span><i class="fa-solid fa-toolbox mr-1"></i> FERRAMENTAS DE MONITORAMENTO</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Prometheus, Grafana e Jaeger</h2>
+                
+                <p class="text-gray-300 mb-6">As principais tecnologias do mercado utilizadas para coletar, visualizar e rastrear a saúde dos sistemas distribuídos.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-emerald-500/30">
+                        <h3 class="text-lg font-bold text-white mb-2">Prometheus</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed mb-4">Coleta métricas via pull HTTP de alvos configurados, armazenando séries temporais com alta performance.</p>
+                        <span class="text-xs text-emerald-400 font-mono-code"><i class="fa-solid fa-check mr-1"></i> Base Cloud Native</span>
+                    </div>
+
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-blue-500/30">
+                        <h3 class="text-lg font-bold text-white mb-2">Grafana</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed mb-4">Plataforma líder em visualização de dados, transformando métricas brutas em dashboards dinâmicos.</p>
+                        <span class="text-xs text-blue-400 font-mono-code"><i class="fa-solid fa-check mr-1"></i> Dashboards Interativos</span>
+                    </div>
+
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-purple-500/30">
+                        <h3 class="text-lg font-bold text-white mb-2">Jaeger</h3>
+                        <p class="text-gray-300 text-sm leading-relaxed mb-4">Ferramenta especializada em rastreamento distribuído (distributed tracing) para depurar latência em rede.</p>
+                        <span class="text-xs text-purple-400 font-mono-code"><i class="fa-solid fa-check mr-1"></i> Tracing Avançado</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(3)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(5)" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Wesley de Souza (Seção 5)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 5 ================= -->
+        <section id="section-5" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">WS</div>
+                    <div>
+                        <span class="text-xs text-purple-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 5 e 6)</span>
+                        <h3 class="text-lg font-bold text-white">Wesley de Souza</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-purple-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-purple-950 border border-purple-500/30">PÁGINA 05 / 10</span>
+                    <span><i class="fa-solid fa-vial mr-1"></i> PIRÂMIDE DE TESTES</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Tipos de Testes em Microsserviços</h2>
+                
+                <p class="text-gray-300 mb-6">Abordagens estruturadas de teste para garantir a qualidade de ponta a ponta no desenvolvimento de sistemas:</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+                    <div class="bg-gray-900/70 p-5 rounded-xl border border-gray-800">
+                        <div class="text-cyan-400 font-mono-code font-bold mb-2">01. Unitários</div>
+                        <h4 class="text-white font-semibold text-sm mb-2">Funções Isoladas</h4>
+                        <p class="text-gray-400 text-xs leading-relaxed">Testam métodos individuais simulando dependências externas com mocks.</p>
+                    </div>
+
+                    <div class="bg-gray-900/70 p-5 rounded-xl border border-gray-800">
+                        <div class="text-purple-400 font-mono-code font-bold mb-2">02. Integração</div>
+                        <h4 class="text-white font-semibold text-sm mb-2">Serviço + Banco</h4>
+                        <p class="text-gray-400 text-xs leading-relaxed">Valida a comunicação entre o código do serviço e armazenamentos ou caches.</p>
+                    </div>
+
+                    <div class="bg-gray-900/70 p-5 rounded-xl border border-gray-800">
+                        <div class="text-emerald-400 font-mono-code font-bold mb-2">03. Contrato</div>
+                        <h4 class="text-white font-semibold text-sm mb-2">API Consumidor/Produtor</h4>
+                        <p class="text-gray-400 text-xs leading-relaxed">Garante que alterações em APIs não quebrem os clientes dependentes.</p>
+                    </div>
+
+                    <div class="bg-gray-900/70 p-5 rounded-xl border border-gray-800">
+                        <div class="text-orange-400 font-mono-code font-bold mb-2">04. Ponta a Ponta</div>
+                        <h4 class="text-white font-semibold text-sm mb-2">Fluxo Completo (E2E)</h4>
+                        <p class="text-gray-400 text-xs leading-relaxed">Simula transações reais de usuários cruzando múltiplos microsserviços.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(4)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(6)" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Wesley de Souza (Seção 6)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 6 ================= -->
+        <section id="section-6" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">WS</div>
+                    <div>
+                        <span class="text-xs text-purple-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 5 e 6)</span>
+                        <h3 class="text-lg font-bold text-white">Wesley de Souza</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-purple-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-purple-950 border border-purple-500/30">PÁGINA 06 / 10</span>
+                    <span><i class="fa-solid fa-file-contract mr-1"></i> TESTES DE CONTRATO (PACT)</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Consumer-Driven Contracts</h2>
+                
+                <p class="text-gray-300 mb-6 leading-relaxed">
+                    Testar integração entre dezenas de microsserviços em tempo de build é inviável. O <strong>Pact</strong> permite que o consumidor defina o contrato esperado da API, validando o produtor de forma isolada e rápida no pipeline de CI/CD.
+                </p>
+
+                <div class="bg-gray-900/80 p-6 rounded-xl border border-purple-500/30 my-6">
+                    <h3 class="text-lg font-bold text-white mb-3"><i class="fa-solid fa-bolt text-purple-400 mr-2"></i> Vantagens dos Testes de Contrato</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><i class="fa-solid fa-check text-purple-400 mr-2"></i>Elimina a necessidade de subir ambientes de integração gigantescos.</li>
+                        <li><i class="fa-solid fa-check text-purple-400 mr-2"></i>Previne quebras de contrato em produção antes do deploy.</li>
+                        <li><i class="fa-solid fa-check text-purple-400 mr-2"></i>Fornece feedback imediato para equipes de desenvolvimento independentes.</li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(5)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(7)" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Rafael Alves (Seção 7)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 7 ================= -->
+        <section id="section-7" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">RA</div>
+                    <div>
+                        <span class="text-xs text-blue-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 7 e 8)</span>
+                        <h3 class="text-lg font-bold text-white">Rafael Alves</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-blue-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-blue-950 border border-blue-500/30">PÁGINA 07 / 10</span>
+                    <span><i class="fa-solid fa-fire mr-1"></i> ENGENHARIA DO CAOS</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Chaos Engineering e Resiliência</h2>
+                
+                <p class="text-gray-300 mb-6 leading-relaxed">
+                    A prática de <strong class="text-blue-400">inserir falhas propositadamente</strong> em ambientes controlados (como derrubar instâncias de banco ou simular latência de rede) para testar a resiliência do sistema antes que um erro real aconteça em produção.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-blue-500/30">
+                        <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-shield text-blue-400 mr-2"></i> Circuit Breaker</h3>
+                        <p class="text-gray-300 text-sm">Interrompe requisições a um microsserviço instável, retornando uma resposta padrão imediata para evitar falhas em cascata.</p>
+                    </div>
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-blue-500/30">
+                        <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-rotate text-blue-400 mr-2"></i> Rate Limiting & Retry</h3>
+                        <p class="text-gray-300 text-sm">Controla picos de acesso protegendo servidores e executando tentativas de reconexão de forma segura e exponencial.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(6)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(8)" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Rafael Alves (Seção 8)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 8 ================= -->
+        <section id="section-8" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">RA</div>
+                    <div>
+                        <span class="text-xs text-blue-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 7 e 8)</span>
+                        <h3 class="text-lg font-bold text-white">Rafael Alves</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-blue-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-blue-950 border border-blue-500/30">PÁGINA 08 / 10</span>
+                    <span><i class="fa-solid fa-server mr-1"></i> AMBIENTES DE PRODUÇÃO E KUBERNETES</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">Orquestração e Health Checks</h2>
+                
+                <p class="text-gray-300 mb-6">Gerenciamento de containers e verificação contínua de saúde em ambientes Cloud Native:</p>
+
+                <div class="bg-gray-900/80 p-6 rounded-xl border border-blue-500/30 my-6">
+                    <h3 class="text-lg font-bold text-white mb-3"><i class="fa-solid fa-id-card text-blue-400 mr-2"></i> Liveness & Readiness Probes</h3>
+                    <p class="text-gray-300 text-sm mb-4 leading-relaxed">
+                        Endpoints padronizados (<code class="text-cyan-400 font-mono-code">/health</code>, <code class="text-cyan-400 font-mono-code">/ready</code>) utilizados por orquestradores como Kubernetes para reiniciar instâncias travadas ou desviar tráfego de serviços indisponíveis.
+                    </p>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(7)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(9)" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Próxima: Heric Antônio (Seção 9)</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 9 ================= -->
+        <section id="section-9" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-orange-950/40 border border-orange-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold">HA</div>
+                    <div>
+                        <span class="text-xs text-orange-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 9 e 10)</span>
+                        <h3 class="text-lg font-bold text-white">Heric Antônio</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-orange-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-orange-950 border border-orange-500/30">PÁGINA 09 / 10</span>
+                    <span><i class="fa-solid fa-flag-checkered mr-1"></i> CONCLUSÃO E TENDÊNCIAS</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-6">O Futuro do Desenvolvimento de Sistemas</h2>
+                
+                <p class="text-gray-300 mb-6 leading-relaxed">
+                    A arquitetura de microsserviços continuará evoluindo com forte integração de inteligência artificial e automação avançada.
+                </p>
+
+                <div class="bg-gray-900/80 p-6 rounded-xl border border-orange-500/30 my-6">
+                    <h3 class="text-lg font-bold text-white mb-3"><i class="fa-solid fa-lightbulb text-orange-400 mr-2"></i> Tendências Tecnológicas</h3>
+                    <ul class="space-y-3 text-sm text-gray-300">
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-chevron-right text-orange-400 mr-2 mt-1"></i>
+                            <span><strong>AIOps:</strong> Uso de machine learning para detecção preditiva de anomalias em tempo real.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-chevron-right text-orange-400 mr-2 mt-1"></i>
+                            <span><strong>Service Meshes:</strong> Istio e Linkerd fornecendo segurança mTLS e tracing transparente.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-800">
+                    <button onclick="goToSection(8)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="goToSection(10)" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span>Ir para o Quiz (Heric Antônio)</span>
+                        <i class="fa-solid fa-gamepad"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO 10 (QUIZ COM 10 PERGUNTAS E GABARITO VERDE/VERMELHO) ================= -->
+        <section id="section-10" class="section-view">
+            <div class="glass-panel rounded-2xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex items-center space-x-3 mb-4 p-3 bg-orange-950/40 border border-orange-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold">HA</div>
+                    <div>
+                        <span class="text-xs text-orange-400 font-mono-code uppercase tracking-wider">Integrante Responsável (Seção 9 e 10)</span>
+                        <h3 class="text-lg font-bold text-white">Heric Antônio</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-purple-400 font-mono-code text-sm mb-3">
+                    <span class="px-2 py-0.5 rounded bg-purple-950 border border-purple-500/30">PÁGINA 10 / 10</span>
+                    <span><i class="fa-solid fa-gamepad mr-1"></i> QUIZ INTERATIVO (10 PERGUNTAS / 10 PESSOAS)</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">Avaliação de Conhecimento</h2>
+                <p class="text-gray-300 mb-6 text-sm">Responda às 10 questões abaixo. Ao finalizar, o sistema mostrará em <strong class="text-emerald-400">verde</strong> as alternativas corretas e em <strong class="text-rose-400">vermelho</strong> as alternativas incorretas selecionadas.</p>
+
+                <!-- Container do Quiz (10 Perguntas) -->
+                <div id="quiz-container" class="space-y-6">
+                    <!-- Q1 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="0" data-correct="1">
+                        <h3 class="text-white font-semibold mb-4 text-base">1. Qual ferramenta é utilizada para coletar métricas baseadas em séries temporais?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q0" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Apache Kafka</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q0" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Prometheus</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q0" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Docker</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="1" data-correct="2">
+                        <h3 class="text-white font-semibold mb-4 text-base">2. Qual pilar rastreia o caminho completo de uma requisição entre vários microsserviços?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q1" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Logs</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q1" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Métricas</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q1" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Traces</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="2" data-correct="0">
+                        <h3 class="text-white font-semibold mb-4 text-base">3. O que valida o teste de contrato (Pact)?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q2" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Acordo de formato de API entre consumidor e produtor de forma isolada.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q2" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Desempenho de carga em nuvem.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q2" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Segurança de rede mTLS.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="3" data-correct="1">
+                        <h3 class="text-white font-semibold mb-4 text-base">4. Qual o objetivo principal da Engenharia do Caos?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q3" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Derrubar servidores por diversão.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q3" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Inserir falhas propositadamente para testar a resiliência do sistema.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q3" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Aumentar a latência das requisições.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="4" data-correct="0">
+                        <h3 class="text-white font-semibold mb-4 text-base">5. Qual é a principal função do padrão Circuit Breaker?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q4" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Interromper requisições a serviços instáveis para evitar falhas em cascata.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q4" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Criptografar o tráfego HTTP entre pods.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q4" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Compactar arquivos de log em disco.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q6 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="5" data-correct="2">
+                        <h3 class="text-white font-semibold mb-4 text-base">6. O que avaliam as Liveness Probes em Kubernetes?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q5" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Se o container está pronto para receber tráfego de rede.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q5" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">A quantidade exata de memória RAM livre no cluster.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q5" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Se a aplicação está viva; caso contrário, reinicia o container.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q7 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="6" data-correct="1">
+                        <h3 class="text-white font-semibold mb-4 text-base">7. Qual ferramenta é amplamente utilizada para criar dashboards visuais a partir de métricas?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q6" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Jaeger</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q6" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Grafana</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q6" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Pact</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q8 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="7" data-correct="0">
+                        <h3 class="text-white font-semibold mb-4 text-base">8. Qual a diferença principal entre Monitoramento e Observabilidade?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q7" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Monitoramento avisa que há falhas; observabilidade explica o porquê de falhas complexas.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q7" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Monitoramento usa gráficos 3D e observabilidade apenas textos.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q7" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Não há nenhuma diferença prática entre os dois termos.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q9 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="8" data-correct="2">
+                        <h3 class="text-white font-semibold mb-4 text-base">9. O que significa o termo AIOps em arquiteturas modernas?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q8" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Criação de jogos em HTML5 para desenvolvedores.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q8" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Automatização de servidores físicos via Inteligência Artificial básica.</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q8" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Uso de machine learning para detecção preditiva de anomalias operacionais.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Q10 -->
+                    <div class="quiz-question bg-gray-900/80 p-6 rounded-xl border border-gray-800" data-question="9" data-correct="1">
+                        <h3 class="text-white font-semibold mb-4 text-base">10. Qual é a base da pirâmide de testes recomendada para microsserviços?</h3>
+                        <div class="space-y-2 options-group">
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="0">
+                                <input type="radio" name="q9" value="0" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Testes Ponta a Ponta (E2E)</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="1">
+                                <input type="radio" name="q9" value="1" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Testes Unitários</span>
+                            </label>
+                            <label class="option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition" data-opt="2">
+                                <input type="radio" name="q9" value="2" class="text-cyan-500">
+                                <span class="text-gray-200 text-sm">Testes de Contrato Pact</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões do Quiz -->
+                <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <button onclick="goToSection(9)" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="submitQuiz()" class="px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <span>Enviar Respostas & Ver Gabarito</span>
+                        <i class="fa-solid fa-check-to-slot"></i>
+                    </button>
+                </div>
+
+                <!-- Resultado do Quiz -->
+                <div id="quiz-result" class="hidden mt-6 p-6 rounded-xl bg-gray-900 border border-purple-500/50 text-center animate-fadeIn">
+                    <h3 class="text-2xl font-bold text-white mb-2" id="result-title">Resultado</h3>
+                    <p class="text-gray-300 text-sm mb-4" id="result-message">Você pontuou X de 10 questões.</p>
+                    <button onclick="resetQuiz()" class="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl text-sm transition">
+                        Refazer Quiz
+                    </button>
+                </div>
+
+                <div class="mt-10 pt-6 border-t border-gray-800 flex justify-between items-center">
+                    <span class="text-xs text-gray-500 font-mono-code">Fim do Projeto</span>
+                    <button onclick="goToSection(1)" class="text-xs text-cyan-400 hover:underline">
+                        <i class="fa-solid fa-arrow-rotate-right mr-1"></i> Voltar ao Início
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="glass-panel border-t border-cyan-500/20 py-6 px-4 mt-auto text-center text-xs text-gray-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <p class="font-bold text-gray-300">Desenvolvimento de Sistemas // Monitoramento e Testes de Microsserviços</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 text-cyan-400 font-mono-code">
+                <span>Emerson de Sousa</span> • 
+                <span>Wesley Queiroz</span> • 
+                <span>Wesley de Souza</span> • 
+                <span>Rafael Alves</span> • 
+                <span>Heric Antônio</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script JavaScript -->
+    <script>
+        let currentSection = 1;
+        const totalSections = 10;
+
+        function goToSection(sectionNum) {
+            if (sectionNum < 1 || sectionNum > totalSections) return;
+            
+            document.querySelectorAll('.section-view').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            const targetEl = document.getElementById(`section-${sectionNum}`);
+            if (targetEl) {
+                targetEl.classList.add('active');
+                currentSection = sectionNum;
+            }
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const target = parseInt(btn.getAttribute('data-target'));
+                if (target === sectionNum) {
+                    btn.classList.add('bg-cyan-950', 'text-cyan-400', 'border', 'border-cyan-500/40');
+                } else {
+                    btn.classList.remove('bg-cyan-950', 'text-cyan-400', 'border', 'border-cyan-500/40');
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Fundo Animado em Canvas
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 150 };
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.radius = Math.random() * 2 + 1.5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > height) this.vy = -this.vy;
+
+                if (mouse.x !== null && mouse.y !== null) {
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < mouse.radius) {
+                        let forceDirectionX = dx / dist;
+                        let forceDirectionY = dy / dist;
+                        let force = (mouse.radius - dist) / mouse.radius;
+                        this.x -= forceDirectionX * force * 1.5;
+                        this.y -= forceDirectionY * force * 1.5;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.6)';
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let count = Math.floor((width * height) / 12000);
+            if (count < 30) count = 30;
+            if (count > 100) count = 100;
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        initParticles();
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let dx = particles[i].x - particles[j].x;
+                    let dy = particles[i].y - particles[j].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        let alpha = (1 - (dist / 120)) * 0.25;
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+
+                if (mouse.x !== null && mouse.y !== null) {
+                    let dx = particles[i].x - mouse.x;
+                    let dy = particles[i].y - mouse.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 130) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        let alpha = (1 - (dist / 130)) * 0.35;
+                        ctx.strokeStyle = `rgba(6, 182, 212, ${alpha})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        animateCanvas();
+
+        function submitQuiz() {
+            const questions = document.querySelectorAll('.quiz-question');
+            let score = 0;
+            let answeredAll = true;
+
+            questions.forEach((q) => {
+                const qIndex = q.getAttribute('data-question');
+                const selected = q.querySelector(`input[name="q${qIndex}"]:checked`);
+                if (!selected) {
+                    answeredAll = false;
+                }
+            });
+
+            if (!answeredAll) {
+                alertCustom('Por favor, responda todas as 10 questões antes de calcular a pontuação.');
+                return;
+            }
+
+            questions.forEach((q) => {
+                const qIndex = q.getAttribute('data-question');
+                const correct = parseInt(q.getAttribute('data-correct'));
+                const selected = q.querySelector(`input[name="q${qIndex}"]:checked`);
+                const selectedVal = selected ? parseInt(selected.value) : -1;
+
+                if (selectedVal === correct) {
+                    score++;
+                }
+
+                const labels = q.querySelectorAll('.option-label');
+                labels.forEach((label) => {
+                    const optVal = parseInt(label.getAttribute('data-opt'));
+                    label.classList.remove('bg-gray-800/50', 'bg-emerald-950/80', 'border-emerald-500', 'bg-rose-950/80', 'border-rose-500');
+                    label.style.border = 'none';
+
+                    if (optVal === correct) {
+                        label.classList.add('bg-emerald-950/80', 'border', 'border-emerald-500');
+                    } else if (optVal === selectedVal && optVal !== correct) {
+                        label.classList.add('bg-rose-950/80', 'border', 'border-rose-500');
+                    } else {
+                        label.classList.add('bg-gray-800/50', 'border', 'border-transparent');
+                    }
+                });
+            });
+
+            const resultModal = document.getElementById('quiz-result');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+
+            resultModal.classList.remove('hidden');
+            resultTitle.textContent = `Sua Pontuação: ${score} / 10`;
+
+            if (score === 10) {
+                resultMessage.textContent = 'Perfeito! Gabarito completo! Você domina absolutamente todos os conceitos de microsserviços!';
+            } else if (score >= 7) {
+                resultMessage.textContent = 'Excelente desempenho! Você compreende muito bem os pilares, testes e ferramentas.';
+            } else if (score >= 4) {
+                resultMessage.textContent = 'Bom trabalho! Revise os pontos destacados em vermelho para aprimorar ainda mais.';
+            } else {
+                resultMessage.textContent = 'Continue estudando! As respostas corretas estão marcadas em verde para seu aprendizado.';
+            }
+
+            resultModal.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetQuiz() {
+            document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+            document.querySelectorAll('.option-label').forEach(label => {
+                label.className = 'option-label flex items-center space-x-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 cursor-pointer transition';
+                label.style.border = '';
+            });
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function alertCustom(msg) {
+            const existing = document.getElementById('custom-alert-modal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'custom-alert-modal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+            modal.innerHTML = `
+                <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-cyan-500/50 text-center animate-fadeIn">
+                    <div class="w-12 h-12 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4 text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Aviso</h3>
+                    <p class="text-gray-300 text-sm mb-6">${msg}</p>
+                    <button onclick="document.getElementById('custom-alert-modal').remove()" class="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl text-sm transition">
+                        Entendi
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        goToSection(1);
+    </script>
+</body>
+</html>
